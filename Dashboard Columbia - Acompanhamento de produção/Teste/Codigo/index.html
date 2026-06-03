@@ -1,0 +1,200 @@
+<!doctype html>
+<!--
+  index.html — Dashboard Executivo: Performance de Nesting
+
+  Passo a passo (resumo):
+  1) Página estática que exibe o dashboard e os KPIs.
+  2) Carrega estilos (`sytle.css`), fonte Inter e Chart.js (CDN).
+  3) O comportamento dinâmico é realizado por `Script.js`, que busca dados na API `/api/dashboard`.
+  4) IDs importantes (referenciados em Script.js):
+     - `headlineDecision`, `executiveText`, `actionList`
+     - `kpiAderencia`, `kpiRisco`, `kpiEficiencia`, `kpiDesvioTempo`, `kpiVolume`, `kpiConcentracao`
+     - `statusChart`, `machineChart`, `riskTable`, `topClientsChart`, `normasChart`, `origemChart`
+  5) Para desenvolvimento local, abra via Live Server (VS Code) ou use `python -m http.server`.
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard Executivo - Performance de Nesting</title>
+  <!-- Carrega o CSS principal do dashboard. Alterações visuais devem ser feitas em sytle.css -->
+  <link rel="stylesheet" href="sytle.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js (CDN) — usada para todos os gráficos do dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Cabeçalho (topbar): título, data de atualização e logo -->
+  <!-- O elemento `.updated` é atualizado dinamicamente por Script.js -->
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Comitê executivo de produção</p>
+      <h1>Performance de Nesting</h1>
+      <div class="updated">Atualizado em: 22/04/2026 14:42</div>
+    </div>
+
+    <img class="brand-logo" src="images.png" alt="Colmac"
+      onerror="this.style.display='none';document.querySelector('.brand-fallback').style.display='block';" />
+    <span class="brand-fallback">Colmac</span>
+  </header>
+
+  <!-- Main: área principal com painéis, KPIs e gráficos -->
+  <!-- Cada seção contém elementos com `id` que são atualizados por Script.js -->
+  <main class="shell">
+    <section class="decision-panel">
+      <div class="executive-summary">
+        <p class="eyebrow">Decisão gerencial</p>
+        <h2 id="headlineDecision">Carregando decisão...</h2>
+        <p id="executiveText">Carregando resumo executivo...</p>
+      </div>
+
+      <div class="decision-actions">
+        <div class="section-heading">
+          <span>Plano de ação imediato</span>
+          <strong id="riskCount">--</strong>
+        </div>
+        <ol id="actionList"></ol>
+      </div>
+    </section>
+
+    <section class="kpi-grid" aria-label="Indicadores executivos">
+      <article class="kpi-card" id="cardAderencia">
+        <span>Aderência à meta</span>
+        <strong id="kpiAderencia">--</strong>
+        <small id="kpiAderenciaNote">--</small>
+      </article>
+      <article class="kpi-card" id="cardRisco">
+        <span>Risco fora da meta</span>
+        <strong id="kpiRisco">--</strong>
+        <small id="kpiRiscoNote">--</small>
+      </article>
+      <article class="kpi-card" id="cardEficiencia">
+        <span>Eficiência vs meta</span>
+        <strong id="kpiEficiencia">--</strong>
+        <small id="kpiEficienciaNote">--</small>
+      </article>
+      <article class="kpi-card" id="cardTempo">
+        <span>Desvio de tempo</span>
+        <strong id="kpiDesvioTempo">--</strong>
+        <small id="kpiDesvioTempoNote">--</small>
+      </article>
+      <article class="kpi-card" id="cardVolume">
+        <span>Volume processado</span>
+        <strong id="kpiVolume">--</strong>
+        <small id="kpiVolumeNote">--</small>
+      </article>
+      <article class="kpi-card" id="cardGargalo">
+        <span>Gargalo de capacidade</span>
+        <strong id="kpiConcentracao">--</strong>
+        <small id="kpiConcentracaoNote">--</small>
+      </article>
+    </section>
+
+    <section class="grid two-columns">
+      <article class="card">
+        <div class="section-heading">
+          <span>Meta x risco</span>
+          <strong id="metaStatus">--</strong>
+        </div>
+        <div class="status-layout">
+          <div class="chart-wrap compact"><canvas id="statusChart"></canvas></div>
+          <div class="status-bars">
+            <div class="status-row">
+              <span>Dentro da meta</span>
+              <div class="progress"><div id="barMeta" class="bar meta"></div></div>
+              <strong id="valMeta">--</strong>
+            </div>
+            <div class="status-row">
+              <span>Alerta</span>
+              <div class="progress"><div id="barAlerta" class="bar alert"></div></div>
+              <strong id="valAlerta">--</strong>
+            </div>
+            <div class="status-row">
+              <span>Crítico</span>
+              <div class="progress"><div id="barCritico" class="bar critical"></div></div>
+              <strong id="valCritico">--</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="section-heading">
+          <span>Capacidade por máquina</span>
+          <strong>Volume + eficiência</strong>
+        </div>
+        <div class="chart-wrap"><canvas id="machineChart"></canvas></div>
+      </article>
+    </section>
+
+    <section class="grid two-columns">
+      <article class="card">
+        <div class="section-heading">
+          <span>Priorização de riscos</span>
+          <strong>Impacto, ação e dono</strong>
+        </div>
+        <div id="riskTable" class="risk-table"></div>
+      </article>
+
+      <article class="card">
+        <div class="section-heading">
+          <span>Comparação com referência</span>
+          <strong>Real x esperado</strong>
+        </div>
+        <div class="comparison-list">
+          <div>
+            <span>Tempo realizado</span>
+            <strong id="cmpTempoReal">--</strong>
+            <small id="cmpTempoRealNote">--</small>
+          </div>
+          <div>
+            <span>Tempo teórico</span>
+            <strong id="cmpTempoTeorico">--</strong>
+            <small>Referência operacional</small>
+          </div>
+          <div>
+            <span>Tempo por registro</span>
+            <strong id="cmpTempoMedio">--</strong>
+            <small>Indicador de fluxo</small>
+          </div>
+          <div>
+            <span>Chapas por registro</span>
+            <strong id="cmpChapas">--</strong>
+            <small>Complexidade média</small>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid three-columns">
+      <article class="card">
+        <div class="section-heading">
+          <span>Clientes prioritários</span>
+          <strong>Top volume</strong>
+        </div>
+        <div class="chart-wrap"><canvas id="topClientsChart"></canvas></div>
+      </article>
+      <article class="card">
+        <div class="section-heading">
+          <span>Mix técnico</span>
+          <strong>Normas</strong>
+        </div>
+        <div class="chart-wrap"><canvas id="normasChart"></canvas></div>
+      </article>
+      <article class="card">
+        <div class="section-heading">
+          <span>Matéria-prima</span>
+          <strong>Origem</strong>
+        </div>
+        <div class="chart-wrap"><canvas id="origemChart"></canvas></div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">CMS - Nest Cortados</footer>
+
+  <!-- Script principal: carrega dados pela API, processa o JSON, atualiza DOM e graficos.
+       Para ajustar intervalo de atualizacao automatico, edite `REFRESH_MS` em Script.js. -->
+  <script src="Script.js"></script>
+</body>
+</html>
